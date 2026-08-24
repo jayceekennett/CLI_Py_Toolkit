@@ -11,11 +11,11 @@ class InputHandler:
     """Class for capturing and parsing commands from the CLI
        It allows the setting of prespecified commands using ':'
        that the user can call during input"""
-    def __init__(self, 
+    def __init__(self,
                  command_map: dict[str, Callable[[], Any]]):
         self.command_map = command_map
 
-    def _categorise(self, user_input: str) -> tuple[bool, str]: 
+    def _categorise(self, user_input: str) -> tuple[bool, str]:
         text = user_input.strip()
         if text.startswith(":"):
             command = text.lower().split()[0]
@@ -28,12 +28,12 @@ class InputHandler:
             print("[system message: invalid command, try again]")
         return command
 
-    def handle(self, user_input: str) -> tuple[bool, Any]:   # categorise input 
+    def handle(self, user_input: str) -> tuple[bool, Any]:  # categorise input 
         is_command, value = self._categorise(user_input)
         if not is_command:
             return False, value
 
-        command = self._get_command(value)                   
+        command = self._get_command(value)             
         return True, command
 
     def _try_command(self, user_input: str) -> tuple[bool, Any]:
@@ -88,15 +88,12 @@ class InputHandler:
                 if value is not None:
                     return value
                 continue
-            else:
-                               
-                try:
-                    val = converter(value)      # check if input is of valid type
-                    return val                  # if so, return
-                    break
-                except ValueError:              # if not, continue loop
-                    print(f"[system message: input of type {accepted_type} required, please try again]")
-                    continue
+            try:
+                val = converter(value)      # check if input is of valid type
+                return val                  # if so, return
+            except ValueError:              # if not, continue loop
+                print(f"[system message: input of type {accepted_type} required, please try again]")
+                continue
 
                 
           

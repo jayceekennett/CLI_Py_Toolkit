@@ -1,32 +1,31 @@
 # encryption.py
-
-'''
-This script saves the user's password (or text) with a private RSA key, and
-lets the user set a local password to encrypt it. 
-NOTE: for security reasons DO NOT share/commit PEM files.'
-'''
-
+import base64
+from getpass import getpass
+import os
+from pathlib import Path
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-import base64
-from getpass import getpass
-import os
-from pathlib import Path
+
 
 class EncryptionManager:
     def __init__(self, dirpath: str):
-        self.dirpath = dirpath      # defined storage path
-    
+        self.dirpath = dirpath      # defined storage path  
+    '''
+    This class saves the user's password (or text) with a private RSA key, and
+    lets the user set a local password to encrypt it. 
+    NOTE: for security reasons DO NOT share/commit PEM files.'
+    '''
     # ----- create/save RSA keys
     def create_save_keys(self) -> None:  
-    # generate a new RSA private key
+       """generate new RSA public and private keys"""
+       
        key_password = getpass("Enter password>> ")  # prompt user to enter a custom password
        private_key = rsa.generate_private_key(
-           public_exponent=65537,       # standard paramaters  
-           key_size = 2048,             # RSA standard
+           public_exponent=65537,     # standard paramaters  
+           key_size = 2048,           # RSA standard
            backend = default_backend()
        )
        byte_pw = key_password.encode('utf-8')       # encode RSA key with the user's custom password
@@ -38,7 +37,6 @@ class EncryptionManager:
 
        # check dir exists to save keys
        tgt_dir = Path(self.dirpath)
-        
        if tgt_dir.exists() is False:
            os.mkdir("storage/")
        else:
@@ -48,7 +46,7 @@ class EncryptionManager:
        with open(f'{self.dirpath}/private_key.pem', 'wb') as f:     # serialise private key to PEM format
                f.write(pem_private)
             
-       # serialise public key to PEM format
+       # serialise public key to PEM 
        pem_public = public_key.public_bytes(
            encoding = serialization.Encoding.PEM,
            format = serialization.PublicFormat.SubjectPublicKeyInfo
@@ -58,11 +56,10 @@ class EncryptionManager:
        with open(f'{self.dirpath}/public_key.pem', 'wb') as f:      # save keys
            f.write(pem_public)
     
-    # ----- load private key
     def load_private_key(self) -> "rsa.RSAPrivateKey":
-        pw_attempt = getpass("Enter password>> ")
+        """load private key from PEM using the user's set password"""
         
-   # load the private key from a PEM file.
+        pw_attempt = getpass("Enter password>> ")
         byte_pw = pw_attempt.encode('utf-8')
         with open(f'{self.dirpath}/private_key.pem', 'rb') as f:
                loaded_private_key = serialization.load_pem_private_key(
@@ -71,20 +68,18 @@ class EncryptionManager:
                    backend = default_backend()
                )
                return loaded_private_key
-           
-    # ---- load public key       
+                
     def load_public_key(self) -> "rsa.RSAPublicKey":
-     # loading the public key from a PEM file.
-         with open(f'{self.dirpath}/public_key.pem', 'rb') as f:
+        """load public key from PEM file"""
+        with open(f'{self.dirpath}/public_key.pem', 'rb') as f:
              loaded_public_key = serialization.load_pem_public_key(
                  f.read(),
-                 backend = default_backend()
-             )      
+                 backend = default_backend())      
              return loaded_public_key
      
-     
-    # ----- encrypt password     
+   
     def encrypt(self, loaded_public_key) -> str:
+         """encrypt using public key"""
          text = getpass("Password here>> ")         # getpass will NOT hide password in Spyder console
          byte_text = text.encode('utf-8')
          encrypted = loaded_public_key.encrypt(
@@ -92,25 +87,22 @@ class EncryptionManager:
              padding.OAEP(
                  mgf = padding.MGF1(algorithm=hashes.SHA256()),
                  algorithm = hashes.SHA256(),
-                 label = None
-             )
-         )
+                 label = None))
          encrypted = base64.b64encode(encrypted).decode("ascii")
          return encrypted 
-     
-    # ----- decrypt password 
+      
     def decrypt(self, encrypted, loaded_private_key) -> str:
+         """decrypt using private key"""
          encrypted = base64.b64decode(encrypted)
          decrypted = loaded_private_key.decrypt(
              encrypted,
              padding.OAEP(
                  mgf = padding.MGF1(algorithm = hashes.SHA256()),
                  algorithm = hashes.SHA256(),
-                 label=None
-             )
-         )
+                 label=None))
          decrypted = decrypted.decode('utf-8')
          return decrypted
+
         
         
      
