@@ -8,7 +8,11 @@ from collections.abc import Callable
 from typing import Any
 
 class InputHandler:
-    def __init__(self, command_map: dict[str, Callable[[], Any]]):
+    """Class for capturing and parsing commands from the CLI
+       It allows the setting of prespecified commands using ':'
+       that the user can call during input"""
+    def __init__(self, 
+                 command_map: dict[str, Callable[[], Any]]):
         self.command_map = command_map
 
     def _categorise(self, user_input: str) -> tuple[bool, str]: 
@@ -54,11 +58,11 @@ class InputHandler:
             if is_command:
                 if value is not None:
                     return value                # if so, return it
-                break
+                continue
                 
             if value in accepted_set:           # compare input vs accepted list
                 return value
-                break
+            
             print("Possible options are:")      # remind user of valid responses
             for response in accepted:
                 print(response)
@@ -71,6 +75,10 @@ class InputHandler:
             "int": int,
             "float": float,
         }
+        converter = converters.get(accepted_type)
+        if converter is None:
+            print("[system message: invalid desired type]")
+            return None
         
         while True:
             user_input = input(prompt)
@@ -79,15 +87,9 @@ class InputHandler:
             if is_command:
                 if value is not None:
                     return value
-                break
+                continue
             else:
                                
-                converter = converters.get(accepted_type) # get desired type
-                if converter is None:
-                    print("[system message: invalid desired type]")
-                    return None
-                    continue
-            
                 try:
                     val = converter(value)      # check if input is of valid type
                     return val                  # if so, return
@@ -95,6 +97,7 @@ class InputHandler:
                 except ValueError:              # if not, continue loop
                     print(f"[system message: input of type {accepted_type} required, please try again]")
                     continue
+
                 
           
                 
